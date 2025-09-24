@@ -21,7 +21,7 @@ test {
 }
 
 application {
-    mainClass = 'org.example.SquaresGame'
+    mainClass = 'org.example.Main'
 }
 
 java {
@@ -31,7 +31,7 @@ java {
 
 tasks.jar {
     manifest {
-        attributes 'Main-Class': 'org.example.SquaresGame'
+        attributes 'Main-Class': 'org.example.Main'
     }
     archiveFileName = 'squares-game-1.0-SNAPSHOT.jar'
     destinationDirectory = file("$buildDir/libs")
