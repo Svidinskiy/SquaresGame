@@ -15,8 +15,8 @@ public class SquaresGame {
     private int[][] winningSquare = null;
 
     static class Player {
-        String type; // "user" или "comp"
-        char color;  // 'W' или 'B'
+        String type;
+        char color;
 
         Player(String type, char color) {
             this.type = type;
@@ -24,12 +24,14 @@ public class SquaresGame {
         }
     }
 
+    // Конструктор класса игры
     public SquaresGame() {
         this.gameStarted = false;
         this.currentPlayer = 0;
         this.players = new Player[2];
     }
 
+    // Обрабатывает введённые пользователем команды
     public void processCommand(String command) {
         if (command.trim().isEmpty()) return;
 
@@ -61,13 +63,6 @@ public class SquaresGame {
                 }
                 handleMoveCommand(parts);
                 break;
-            case "HELP":
-                if (parts.length != 1) {
-                    System.out.println("Некорректная команда: ожидалась только HELP");
-                    return;
-                }
-                printHelp();
-                break;
             case "EXIT":
                 if (parts.length != 1) {
                     System.out.println("Некорректная команда: ожидалась только EXIT");
@@ -75,11 +70,19 @@ public class SquaresGame {
                 }
                 System.exit(0);
                 break;
+            case "HELP":
+                if (parts.length != 1) {
+                    System.out.println("Некорректная команда: ожидалась только HELP");
+                    return;
+                }
+                printHelp();
+                break;
             default:
                 System.out.println("Некорректная команда: неизвестная команда " + cmd);
         }
     }
 
+    // Обрабатывает команду начала новой игры
     private void handleGameCommand(String[] parts) {
         try {
             int newSize = Integer.parseInt(parts[0].trim());
@@ -121,13 +124,25 @@ public class SquaresGame {
             this.currentPlayer = 0;
             this.gameStarted = true;
             System.out.println("Новая игра начата");
-            printBoard();
+
             if (players[0].type.equals("comp")) makeComputerMove();
+
         } catch (NumberFormatException e) {
             System.out.println("Некорректная команда: неверный формат числа");
         }
     }
 
+    // Проверяет, корректен ли тип игрока
+    private boolean isValidType(String type) {
+        return type.equals("user") || type.equals("comp");
+    }
+
+    // Проверяет, корректен ли цвет игрока
+    private boolean isValidColor(char color) {
+        return color == 'W' || color == 'B';
+    }
+
+    // Обрабатывает команду хода игрока
     private void handleMoveCommand(String[] parts) {
         if (!gameStarted) {
             System.out.println("Некорректная команда: игра еще не начата");
@@ -149,6 +164,7 @@ public class SquaresGame {
         }
     }
 
+    // Выполняет ход игрока
     private void makeMove(int x, int y) {
         if (!isInside(x, y)) {
             System.out.println("Некорректная команда: координаты вне доски");
@@ -187,21 +203,82 @@ public class SquaresGame {
         if (players[currentPlayer].type.equals("comp")) makeComputerMove();
     }
 
+    // Выполняет ход компьютера с поиском выигрышного хода или случайного
     private void makeComputerMove() {
-        List<int[]> emptyCells = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                if (board[i][j] == '.') {
-                    emptyCells.add(new int[]{i, j});
+        char myColor = players[currentPlayer].color;
+        char oppColor = players[(currentPlayer + 1) % 2].color;
+
+        int[] move = findWinningMove(myColor);
+        if (move == null) {
+            move = findWinningMove(oppColor);
+        }
+        if (move == null) {
+            List<int[]> emptyCells = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                for (int j = 0; j < size; j++) {
+                    if (board[i][j] == '.') {
+                        emptyCells.add(new int[]{i, j});
+                    }
                 }
             }
+            if (!emptyCells.isEmpty()) {
+                move = emptyCells.get(random.nextInt(emptyCells.size()));
+            }
         }
-        if (!emptyCells.isEmpty()) {
-            int[] move = emptyCells.get(random.nextInt(emptyCells.size()));
+
+        if (move != null) {
             makeMove(move[0], move[1]);
         }
     }
 
+    // Ищет потенциальный выигрышный ход для указанного цвета
+    private int[] findWinningMove(char color) {
+        List<int[]> cells = new ArrayList<>();
+        for (int i = 0; i < size; i++)
+            for (int j = 0; j < size; j++)
+                if (board[i][j] == color) cells.add(new int[]{i, j});
+
+        for (int i = 0; i < cells.size(); i++) {
+            for (int j = i + 1; j < cells.size(); j++) {
+                int x1 = cells.get(i)[0], y1 = cells.get(i)[1];
+                int x2 = cells.get(j)[0], y2 = cells.get(j)[1];
+
+                int dx = x2 - x1;
+                int dy = y2 - y1;
+
+                int[][] variants = { {-dy, dx}, {dy, -dx} };
+                for (int[] v : variants) {
+                    int vx = v[0], vy = v[1];
+                    int x3 = x1 + vx, y3 = y1 + vy;
+                    int x4 = x2 + vx, y4 = y2 + vy;
+
+                    int emptyCount = 0;
+                    int[] emptyCell = null;
+                    int[][] points = {{x1,y1},{x2,y2},{x3,y3},{x4,y4}};
+                    for (int[] p : points) {
+                        int px = p[0], py = p[1];
+                        if (!isInside(px, py)) {
+                            emptyCount = -1;
+                            break;
+                        }
+                        if (board[px][py] == '.') {
+                            emptyCount++;
+                            emptyCell = new int[]{px, py};
+                        } else if (board[px][py] != color) {
+                            emptyCount = -1;
+                            break;
+                        }
+                    }
+                    if (emptyCount == 1) {
+                        return emptyCell;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    // Проверяет, создал ли игрок выигрышный квадрат
     private boolean checkWinner(char color) {
         List<int[]> cells = new ArrayList<>();
         for (int i = 0; i < size; i++) {
@@ -238,6 +315,12 @@ public class SquaresGame {
         return false;
     }
 
+    // Проверяет, находится ли координата внутри границ доски
+    private boolean isInside(int x, int y) {
+        return x >= 0 && x < size && y >= 0 && y < size;
+    }
+
+    // Проверяет, заполнена ли вся доска
     private boolean isBoardFull() {
         for (int i = 0; i < size; i++)
             for (int j = 0; j < size; j++)
@@ -245,18 +328,22 @@ public class SquaresGame {
         return true;
     }
 
-    private boolean isInside(int x, int y) {
-        return x >= 0 && x < size && y >= 0 && y < size;
+    // Выводит справку
+    private void printHelp() {
+        System.out.println("""
+            Доступные команды:
+            GAME N, U1, U2 - начать новую игру
+              N: размер доски (> 2)
+              U1, U2: параметры игроков (TYPE C)
+                TYPE: 'user' или 'comp'
+                C: цвет ('W' или 'B')
+            MOVE X, Y - сделать ход в координаты (X, Y)
+            EXIT - выход из программы
+            HELP - показать это описание
+            """);
     }
 
-    private boolean isValidType(String type) {
-        return type.equals("user") || type.equals("comp");
-    }
-
-    private boolean isValidColor(char color) {
-        return color == 'W' || color == 'B';
-    }
-
+    // Печатает текущее состояние доски
     private void printBoard() {
         System.out.println("Текущее состояние доски:");
         int width = Integer.toString(size - 1).length();
@@ -271,20 +358,6 @@ public class SquaresGame {
                 System.out.print(board[i][j] + " ");
             System.out.println();
         }
-    }
-
-    private void printHelp() {
-        System.out.println("""
-            Доступные команды:
-            GAME N, U1, U2 - начать новую игру
-              N: размер доски (> 2)
-              U1, U2: параметры игроков (TYPE C)
-                TYPE: 'user' или 'comp'
-                C: цвет ('W' или 'B')
-            MOVE X, Y - сделать ход в координаты (X, Y)
-            EXIT - выход из программы
-            HELP - показать это описание
-            """);
     }
 
     public static void main(String[] args) {
