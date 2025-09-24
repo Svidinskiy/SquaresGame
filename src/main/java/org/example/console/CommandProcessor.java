@@ -1,4 +1,7 @@
-package org.example;
+package org.example.console;
+
+import org.example.core.Player;
+import org.example.core.SquaresGame;
 
 // Отвечает за разбор команд и их передачу движку
 public class CommandProcessor {

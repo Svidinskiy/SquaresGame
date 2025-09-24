@@ -1,4 +1,4 @@
-package org.example;
+package org.example.core;
 
 // Класс игрока
 public class Player {

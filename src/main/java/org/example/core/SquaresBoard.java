@@ -1,4 +1,4 @@
-package org.example;
+package org.example.core;
 
 // Класс доски, отвечает за хранение клеток и проверку заполненности
 public class SquaresBoard {
