@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group = 'org.example'
@@ -11,10 +12,27 @@ repositories {
 
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 test {
     useJUnitPlatform()
+}
+
+application {
+    mainClass = 'org.example.SquaresGame'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.jar {
+    manifest {
+        attributes 'Main-Class': 'org.example.SquaresGame'
+    }
+    archiveFileName = 'squares-game-1.0-SNAPSHOT.jar'
+    destinationDirectory = file("$buildDir/libs")
 }
