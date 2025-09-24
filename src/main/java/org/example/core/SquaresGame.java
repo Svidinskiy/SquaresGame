@@ -1,4 +1,4 @@
-package org.example;
+package org.example.core;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +33,35 @@ public class SquaresGame {
         handleComputerTurns();
     }
 
+    // метод для загрузки состояния доски
+    public void loadBoard(int size, String data, char nextPlayerColor) {
+        if (size <= 2) throw new IllegalArgumentException("Size must be > 2");
+        if (data.length() != size * size) throw new IllegalArgumentException("Invalid board data length");
+        if (nextPlayerColor != 'W' && nextPlayerColor != 'B') throw new IllegalArgumentException("Invalid player color");
+
+        // Создаём новую доску
+        this.board = new SquaresBoard(size);
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                char cell = data.charAt(i * size + j);
+                if (cell == ' ' || cell == '.') {
+                    board.setCell(i, j, '.');
+                } else if (cell == 'w' || cell == 'W' || cell == 'b' || cell == 'B') {
+                    board.setCell(i, j, Character.toUpperCase(cell));
+                } else {
+                    throw new IllegalArgumentException("Invalid character in board data: " + cell);
+                }
+            }
+        }
+
+        // Устанавливаем игроков
+        this.players[0] = new Player("comp", nextPlayerColor);
+        this.players[1] = new Player("comp", nextPlayerColor == 'W' ? 'B' : 'W');
+        this.currentPlayerIndex = 0;
+        this.gameStarted = true;
+        this.winningSquare = null;
+    }
+
     public boolean isGameStarted() { return gameStarted; }
 
     public Player getCurrentPlayer() { return players[currentPlayerIndex]; }
@@ -56,6 +85,21 @@ public class SquaresGame {
         }
     }
 
+    //  метод для получения следующего хода
+    public int[] findNextMove() {
+        if (!gameStarted) throw new IllegalStateException("Game not started");
+
+        char myColor = getCurrentPlayer().getColor();
+        char oppColor = players[(currentPlayerIndex + 1) % 2].getColor();
+
+        // Ищем выигрышный ход
+        int[] move = findWinningMove(myColor);
+        if (move == null) move = findWinningMove(oppColor); // Блокируем противника
+        if (move == null) move = pickRandomMove(); // Случайный ход
+
+        return move;
+    }
+
     private void placePiece(int x, int y) {
         board.setCell(x, y, getCurrentPlayer().getColor());
         System.out.printf("%c (%d, %d)%n", getCurrentPlayer().getColor(), x, y);
@@ -73,8 +117,7 @@ public class SquaresGame {
 
             if (move == null) break;
 
-            int x = move[0], y = move[1];
-            placePiece(x, y);
+            placePiece(move[0], move[1]);
             checkGameState();
             if (gameStarted) {
                 switchPlayer();
@@ -181,4 +224,49 @@ public class SquaresGame {
     }
 
     public SquaresBoard getBoard() { return board; }
+
+    public String getGameStatus() {
+        if (board == null) return "ACTIVE";
+        // Проверим победителя
+        if (checkWinnerPublic('W')) return "W";
+        if (checkWinnerPublic('B')) return "B";
+        // Ничья?
+        if (board.isFull()) return "DRAW";
+        return "ACTIVE";
+    }
+
+    public boolean checkWinnerPublic(char color) {
+        List<int[]> cells = new ArrayList<>();
+        int size = board.getSize();
+        for (int i = 0; i < size; i++)
+            for (int j = 0; j < size; j++)
+                if (board.getCell(i, j) == color) cells.add(new int[]{i, j});
+
+        for (int i = 0; i < cells.size(); i++) {
+            for (int j = i + 1; j < cells.size(); j++) {
+                int x1 = cells.get(i)[0], y1 = cells.get(i)[1];
+                int x2 = cells.get(j)[0], y2 = cells.get(j)[1];
+                int dx = x2 - x1, dy = y2 - y1;
+
+                int[][] variants = {{-dy, dx}, {dy, -dx}};
+                for (int[] v : variants) {
+                    int vx = v[0], vy = v[1];
+                    int x3 = x1 + vx, y3 = y1 + vy;
+                    int x4 = x2 + vx, y4 = y2 + vy;
+
+                    if (board.isInside(x3, y3) && board.isInside(x4, y4)) {
+                        if (board.getCell(x3, y3) == color && board.getCell(x4, y4) == color) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    // Возвращает winningSquare (может быть null)
+    public int[][] getWinningSquarePublic() {
+        return winningSquare;
+    }
 }

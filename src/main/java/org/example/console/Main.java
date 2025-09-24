@@ -1,4 +1,6 @@
-package org.example;
+package org.example.console;
+
+import org.example.core.SquaresGame;
 
 import java.util.Scanner;
 

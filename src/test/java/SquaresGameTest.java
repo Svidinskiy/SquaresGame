@@ -1,7 +1,7 @@
-import org.example.CommandProcessor;
-import org.example.Player;
-import org.example.SquaresBoard;
-import org.example.SquaresGame;
+import org.example.console.CommandProcessor;
+import org.example.core.Player;
+import org.example.core.SquaresBoard;
+import org.example.core.SquaresGame;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
