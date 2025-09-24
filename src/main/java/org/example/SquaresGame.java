@@ -1,5 +1,8 @@
 package org.example;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 public class SquaresGame {
@@ -8,10 +11,12 @@ public class SquaresGame {
     private Player[] players;
     private int currentPlayer;
     private boolean gameStarted;
+    private final Random random = new Random();
+    private int[][] winningSquare = null;
 
     static class Player {
-        String type;
-        char color;
+        String type; // "user" или "comp"
+        char color;  // 'W' или 'B'
 
         Player(String type, char color) {
             this.type = type;
@@ -117,6 +122,7 @@ public class SquaresGame {
             this.gameStarted = true;
             System.out.println("Новая игра начата");
             printBoard();
+            if (players[0].type.equals("comp")) makeComputerMove();
         } catch (NumberFormatException e) {
             System.out.println("Некорректная команда: неверный формат числа");
         }
@@ -158,7 +164,85 @@ public class SquaresGame {
         System.out.printf("%c (%d, %d)%n", color, x, y);
         printBoard();
 
+        if (checkWinner(color)) {
+            System.out.printf("Игра окончена. Победили %c%n", color);
+            if (winningSquare != null) {
+                System.out.print("Координаты выигрышного квадрата: ");
+                for (int[] cell : winningSquare) {
+                    System.out.print("(" + cell[0] + "," + cell[1] + ") ");
+                }
+                System.out.println();
+            }
+            gameStarted = false;
+            return;
+        }
+
+        if (isBoardFull()) {
+            System.out.println("Игра окончена. Ничья");
+            gameStarted = false;
+            return;
+        }
+
         currentPlayer = (currentPlayer + 1) % 2;
+        if (players[currentPlayer].type.equals("comp")) makeComputerMove();
+    }
+
+    private void makeComputerMove() {
+        List<int[]> emptyCells = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (board[i][j] == '.') {
+                    emptyCells.add(new int[]{i, j});
+                }
+            }
+        }
+        if (!emptyCells.isEmpty()) {
+            int[] move = emptyCells.get(random.nextInt(emptyCells.size()));
+            makeMove(move[0], move[1]);
+        }
+    }
+
+    private boolean checkWinner(char color) {
+        List<int[]> cells = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (board[i][j] == color) {
+                    cells.add(new int[]{i, j});
+                }
+            }
+        }
+
+        for (int i = 0; i < cells.size(); i++) {
+            for (int j = i + 1; j < cells.size(); j++) {
+                int x1 = cells.get(i)[0], y1 = cells.get(i)[1];
+                int x2 = cells.get(j)[0], y2 = cells.get(j)[1];
+
+                int dx = x2 - x1;
+                int dy = y2 - y1;
+
+                int[][] variants = { {-dy, dx}, {dy, -dx} };
+                for (int[] v : variants) {
+                    int vx = v[0], vy = v[1];
+                    int x3 = x1 + vx, y3 = y1 + vy;
+                    int x4 = x2 + vx, y4 = y2 + vy;
+
+                    if (isInside(x3, y3) && isInside(x4, y4)) {
+                        if (board[x3][y3] == color && board[x4][y4] == color) {
+                            winningSquare = new int[][]{{x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}};
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isBoardFull() {
+        for (int i = 0; i < size; i++)
+            for (int j = 0; j < size; j++)
+                if (board[i][j] == '.') return false;
+        return true;
     }
 
     private boolean isInside(int x, int y) {
