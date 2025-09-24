@@ -6,6 +6,7 @@ public class SquaresGame {
     private char[][] board;
     private int size;
     private Player[] players;
+    private int currentPlayer;
     private boolean gameStarted;
 
     static class Player {
@@ -20,6 +21,7 @@ public class SquaresGame {
 
     public SquaresGame() {
         this.gameStarted = false;
+        this.currentPlayer = 0;
         this.players = new Player[2];
     }
 
@@ -46,6 +48,13 @@ public class SquaresGame {
                     return;
                 }
                 handleGameCommand(parts);
+                break;
+            case "MOVE":
+                if (parts.length != 3) {
+                    System.out.println("Некорректная команда: ожидалось 3 части для MOVE");
+                    return;
+                }
+                handleMoveCommand(parts);
                 break;
             case "HELP":
                 if (parts.length != 1) {
@@ -104,11 +113,56 @@ public class SquaresGame {
 
             this.players[0] = new Player(p1Type, p1Color);
             this.players[1] = new Player(p2Type, p2Color);
+            this.currentPlayer = 0;
             this.gameStarted = true;
             System.out.println("Новая игра начата");
+            printBoard();
         } catch (NumberFormatException e) {
             System.out.println("Некорректная команда: неверный формат числа");
         }
+    }
+
+    private void handleMoveCommand(String[] parts) {
+        if (!gameStarted) {
+            System.out.println("Некорректная команда: игра еще не начата");
+            return;
+        }
+        try {
+            int x = Integer.parseInt(parts[1].replace(",", "").trim());
+            int y = Integer.parseInt(parts[2].replace(",", "").trim());
+
+            if (players[currentPlayer].type.equals("comp")) {
+                System.out.println("Некорректная команда: сейчас ход компьютера");
+                return;
+            }
+
+            makeMove(x, y);
+
+        } catch (NumberFormatException e) {
+            System.out.println("Некорректная команда: неверные координаты");
+        }
+    }
+
+    private void makeMove(int x, int y) {
+        if (!isInside(x, y)) {
+            System.out.println("Некорректная команда: координаты вне доски");
+            return;
+        }
+        if (board[x][y] != '.') {
+            System.out.println("Некорректная команда: клетка уже занята");
+            return;
+        }
+
+        char color = players[currentPlayer].color;
+        board[x][y] = color;
+        System.out.printf("%c (%d, %d)%n", color, x, y);
+        printBoard();
+
+        currentPlayer = (currentPlayer + 1) % 2;
+    }
+
+    private boolean isInside(int x, int y) {
+        return x >= 0 && x < size && y >= 0 && y < size;
     }
 
     private boolean isValidType(String type) {
@@ -117,6 +171,22 @@ public class SquaresGame {
 
     private boolean isValidColor(char color) {
         return color == 'W' || color == 'B';
+    }
+
+    private void printBoard() {
+        System.out.println("Текущее состояние доски:");
+        int width = Integer.toString(size - 1).length();
+        System.out.print(" ".repeat(width + 2));
+        for (int j = 0; j < size; j++)
+            System.out.print(j + " ");
+        System.out.println();
+
+        for (int i = 0; i < size; i++) {
+            System.out.printf("%" + width + "d ", i);
+            for (int j = 0; j < size; j++)
+                System.out.print(board[i][j] + " ");
+            System.out.println();
+        }
     }
 
     private void printHelp() {
