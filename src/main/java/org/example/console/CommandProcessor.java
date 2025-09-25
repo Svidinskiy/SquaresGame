@@ -3,11 +3,12 @@ package org.example.console;
 import org.example.core.Player;
 import org.example.core.SquaresGame;
 
-// Отвечает за разбор команд и их передачу движку
 public class CommandProcessor {
     private final SquaresGame game;
 
-    public CommandProcessor(SquaresGame game) { this.game = game; }
+    public CommandProcessor(SquaresGame game) {
+        this.game = game;
+    }
 
     public void process(String command) {
         if (command == null || command.trim().isEmpty()) {
@@ -21,8 +22,12 @@ public class CommandProcessor {
 
         if (trimmed.toUpperCase().startsWith("GAME")) {
             cmd = "GAME";
-            String argsPart = trimmed.substring(4).trim();
-            parts = argsPart.split("\\s*,\\s*");
+            String args = trimmed.substring(4).trim();
+            if (!args.matches("\\d+\\s*,\\s*\\w+\\s+\\w\\s*,\\s*\\w+\\s+\\w")) {
+                System.out.println("Incorrect command format. Expected: GAME N, TYPE1 C1, TYPE2 C2");
+                return;
+            }
+            parts = args.split("\\s*,\\s*");
         } else {
             parts = trimmed.split("\\s+");
             cmd = parts[0].trim().toUpperCase();
@@ -30,7 +35,6 @@ public class CommandProcessor {
 
         switch (cmd) {
             case "GAME":
-                if (parts.length != 3) { System.out.println("Incorrect command"); return; }
                 try {
                     int size = Integer.parseInt(parts[0].trim());
                     String[] p1Params = parts[1].trim().split("\\s+");
@@ -39,7 +43,7 @@ public class CommandProcessor {
                     Player p2 = new Player(p2Params[0], p2Params[1].charAt(0));
                     game.startNewGame(size, p1, p2);
                 } catch (Exception e) {
-                    System.out.println("Incorrect command");
+                    System.out.println("Invalid parameters: " + e.getMessage());
                 }
                 break;
             case "MOVE":
@@ -59,7 +63,7 @@ public class CommandProcessor {
                     int y = Integer.parseInt(moveParts[1].trim());
                     game.makeMove(x, y);
                 } catch (Exception e) {
-                    System.out.println("Incorrect command");
+                    System.out.println("Invalid move: " + e.getMessage());
                 }
                 break;
             case "HELP":

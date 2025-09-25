@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-// Основной движок игры
 public class SquaresGame {
     private SquaresBoard board;
     private Player[] players;
@@ -33,28 +32,22 @@ public class SquaresGame {
         handleComputerTurns();
     }
 
-    // метод для загрузки состояния доски
     public void loadBoard(int size, String data, char nextPlayerColor) {
         if (size <= 2) throw new IllegalArgumentException("Size must be > 2");
         if (data.length() != size * size) throw new IllegalArgumentException("Invalid board data length");
         if (nextPlayerColor != 'W' && nextPlayerColor != 'B') throw new IllegalArgumentException("Invalid player color");
 
-        // Создаём новую доску
         this.board = new SquaresBoard(size);
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 char cell = data.charAt(i * size + j);
-                if (cell == ' ' || cell == '.') {
-                    board.setCell(i, j, '.');
-                } else if (cell == 'w' || cell == 'W' || cell == 'b' || cell == 'B') {
-                    board.setCell(i, j, Character.toUpperCase(cell));
-                } else {
+                if (cell != '.' && cell != ' ' && cell != 'W' && cell != 'B' && cell != 'w' && cell != 'b') {
                     throw new IllegalArgumentException("Invalid character in board data: " + cell);
                 }
+                board.setCell(i, j, cell == ' ' || cell == '.' ? '.' : Character.toUpperCase(cell));
             }
         }
 
-        // Устанавливаем игроков
         this.players[0] = new Player("comp", nextPlayerColor);
         this.players[1] = new Player("comp", nextPlayerColor == 'W' ? 'B' : 'W');
         this.currentPlayerIndex = 0;
@@ -85,17 +78,15 @@ public class SquaresGame {
         }
     }
 
-    //  метод для получения следующего хода
     public int[] findNextMove() {
         if (!gameStarted) throw new IllegalStateException("Game not started");
 
         char myColor = getCurrentPlayer().getColor();
         char oppColor = players[(currentPlayerIndex + 1) % 2].getColor();
 
-        // Ищем выигрышный ход
         int[] move = findWinningMove(myColor);
-        if (move == null) move = findWinningMove(oppColor); // Блокируем противника
-        if (move == null) move = pickRandomMove(); // Случайный ход
+        if (move == null) move = findWinningMove(oppColor);
+        if (move == null) move = pickRandomMove();
 
         return move;
     }
@@ -175,7 +166,7 @@ public class SquaresGame {
     }
 
     private void checkGameState() {
-        if (checkWinner(getCurrentPlayer().getColor())) {
+        if (checkWinner(getCurrentPlayer().getColor(), true)) {
             System.out.printf("Game finished. %c wins!%n", getCurrentPlayer().getColor());
             if (winningSquare != null) {
                 System.out.print("Winning square coordinates: ");
@@ -192,7 +183,7 @@ public class SquaresGame {
 
     private void switchPlayer() { currentPlayerIndex = (currentPlayerIndex + 1) % 2; }
 
-    private boolean checkWinner(char color) {
+    private boolean checkWinner(char color, boolean saveWinningSquare) {
         List<int[]> cells = new ArrayList<>();
         int size = board.getSize();
         for (int i = 0; i < size; i++)
@@ -213,7 +204,9 @@ public class SquaresGame {
 
                     if (board.isInside(x3, y3) && board.isInside(x4, y4)) {
                         if (board.getCell(x3, y3) == color && board.getCell(x4, y4) == color) {
-                            winningSquare = new int[][]{{x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}};
+                            if (saveWinningSquare) {
+                                winningSquare = new int[][]{{x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}};
+                            }
                             return true;
                         }
                     }
@@ -227,46 +220,13 @@ public class SquaresGame {
 
     public String getGameStatus() {
         if (board == null) return "ACTIVE";
-        // Проверим победителя
-        if (checkWinnerPublic('W')) return "W";
-        if (checkWinnerPublic('B')) return "B";
-        // Ничья?
+        if (checkWinner('W', false)) return "W";
+        if (checkWinner('B', false)) return "B";
         if (board.isFull()) return "DRAW";
         return "ACTIVE";
     }
 
-    public boolean checkWinnerPublic(char color) {
-        List<int[]> cells = new ArrayList<>();
-        int size = board.getSize();
-        for (int i = 0; i < size; i++)
-            for (int j = 0; j < size; j++)
-                if (board.getCell(i, j) == color) cells.add(new int[]{i, j});
-
-        for (int i = 0; i < cells.size(); i++) {
-            for (int j = i + 1; j < cells.size(); j++) {
-                int x1 = cells.get(i)[0], y1 = cells.get(i)[1];
-                int x2 = cells.get(j)[0], y2 = cells.get(j)[1];
-                int dx = x2 - x1, dy = y2 - y1;
-
-                int[][] variants = {{-dy, dx}, {dy, -dx}};
-                for (int[] v : variants) {
-                    int vx = v[0], vy = v[1];
-                    int x3 = x1 + vx, y3 = y1 + vy;
-                    int x4 = x2 + vx, y4 = y2 + vy;
-
-                    if (board.isInside(x3, y3) && board.isInside(x4, y4)) {
-                        if (board.getCell(x3, y3) == color && board.getCell(x4, y4) == color) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    // Возвращает winningSquare (может быть null)
-    public int[][] getWinningSquarePublic() {
+    public int[][] getWinningSquare() {
         return winningSquare;
     }
 }

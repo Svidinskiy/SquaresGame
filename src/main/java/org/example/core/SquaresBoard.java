@@ -1,6 +1,5 @@
 package org.example.core;
 
-// Класс доски, отвечает за хранение клеток и проверку заполненности
 public class SquaresBoard {
     private final char[][] board;
     private final int size;
@@ -25,6 +24,9 @@ public class SquaresBoard {
 
     public void setCell(int x, int y, char color) {
         if (!isInside(x, y)) throw new IllegalArgumentException("Coordinates out of bounds");
+        if (color != '.' && color != 'W' && color != 'B') {
+            throw new IllegalArgumentException("Invalid cell value: must be '.', 'W', or 'B'");
+        }
         board[x][y] = color;
     }
 

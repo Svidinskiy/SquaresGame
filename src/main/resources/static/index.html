@@ -7,9 +7,29 @@
 </head>
 <body>
 <h1>Squares Game</h1>
+
+<label for="board-size">Размер доски:</label>
+<input type="number" id="board-size" value="3" min="3" max="10">
+
+<br><br>
+
+<label>Режим игры:</label>
+<select id="game-mode">
+    <option value="2p">Два игрока</option>
+    <option value="vs-computer">Против компьютера</option>
+</select>
+
+<br><br>
+
+<button id="start-game">Начать игру</button>
+<button id="restart">Перезапустить игру</button>
+
 <div id="message"></div>
+<div id="loading" style="display: none;">Загрузка хода...</div>
+<p>Ход текущего игрока: <span id="current-player"></span></p>
+
 <table id="board"></table>
-<button id="restart">Начать игру</button>
+
 <script src="app.js"></script>
 </body>
 </html>

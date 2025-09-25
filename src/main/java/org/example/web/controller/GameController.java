@@ -10,10 +10,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api")
 public class GameController {
 
-    @PostMapping("/{rules}/nextMove")
-    public ResponseEntity<SimpleMoveDto> nextMove(@PathVariable String rules, @RequestBody BoardDto boardDto) {
+    @PostMapping("/nextMove")
+    public ResponseEntity<SimpleMoveDto> nextMove(@RequestBody BoardDto boardDto) {
         try {
-            // Валидация входных данных
             if (boardDto.getSize() <= 2) {
                 return ResponseEntity.badRequest().body(
                         new SimpleMoveDto(-1, -1, null, "Invalid board size"));
@@ -31,17 +30,10 @@ public class GameController {
                         new SimpleMoveDto(-1, -1, null, "Invalid player color"));
             }
 
-            if (!"squares".equalsIgnoreCase(rules)) {
-                return ResponseEntity.badRequest().body(
-                        new SimpleMoveDto(-1, -1, null, "Unsupported rules: " + rules));
-            }
-
-            // Создаём локальный движок
             SquaresGame game = new SquaresGame();
             char nextPlayer = Character.toUpperCase(nextColorStr.charAt(0));
             game.loadBoard(boardDto.getSize(), data, nextPlayer);
 
-            // Проверка статуса игры
             String status = game.getGameStatus();
             if (!"ACTIVE".equals(status)) {
                 String msg = switch (status) {
@@ -49,7 +41,8 @@ public class GameController {
                     case "W", "B" -> "Game finished. " + status + " wins!";
                     default -> "Game finished";
                 };
-                return ResponseEntity.ok(new SimpleMoveDto(-1, -1, null, msg));
+                int[][] winningSquare = game.getWinningSquare();
+                return ResponseEntity.ok(new SimpleMoveDto(-1, -1, status.toLowerCase(), msg, winningSquare));
             }
 
             int[] move = game.findNextMove();
@@ -60,7 +53,6 @@ public class GameController {
 
             return ResponseEntity.ok(
                     new SimpleMoveDto(move[0], move[1], String.valueOf(Character.toLowerCase(nextPlayer)), "Move found"));
-
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(
                     new SimpleMoveDto(-1, -1, null, e.getMessage()));

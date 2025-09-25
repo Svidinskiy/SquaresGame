@@ -1,39 +1,99 @@
 body {
-  font-family: Arial, sans-serif;
-  text-align: center;
+    font-family: Arial, sans-serif;
+    text-align: center;
 }
 
 h1 {
-  margin-top: 20px;
+    margin-top: 20px;
 }
 
 #message {
-  margin: 10px 0;
-  font-weight: bold;
-  color: #333;
+    margin: 10px 0;
+    font-weight: bold;
+    color: #333;
+}
+
+#loading {
+    margin: 10px 0;
+    color: #007bff;
+    font-weight: bold;
 }
 
 table {
-  border-collapse: collapse;
-  margin: 20px auto;
+    border-collapse: collapse;
+    margin: 20px auto;
 }
 
 td {
-  width: 60px;
-  height: 60px;
-  text-align: center;
-  vertical-align: middle;
-  border: 2px solid #333;
-  font-size: 28px;
-  cursor: pointer;
+    width: 60px;
+    height: 60px;
+    text-align: center;
+    vertical-align: middle;
+    border: 2px solid #333;
+    font-size: 28px;
+    position: relative;
 }
 
-td.w { background-color: #e0f7fa; }
-td.b { background-color: #ffe0b2; }
+td.clickable {
+    cursor: pointer;
+}
+
+td.disabled {
+    cursor: not-allowed;
+}
+
+.piece {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #000;
+    margin: auto;
+    transform: scale(0);
+    animation: drop 0.3s forwards;
+}
+
+
+.piece.b { background-color: black; }
+.piece.w { background-color: white; }
+
+td.winning .piece {
+    box-shadow: 0 0 15px 5px #81c784;
+    animation: pulse-win 1.5s infinite;
+}
+
+td.last-move .piece {
+    outline: 3px solid #ff5252;
+    animation: pulse 1s infinite;
+}
+
+#current-player .piece {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #000;
+    display: inline-block;
+    vertical-align: middle;
+}
 
 button {
-  margin-top: 15px;
-  padding: 8px 16px;
-  font-size: 16px;
-  cursor: pointer;
+    margin-top: 15px;
+    padding: 8px 16px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+@keyframes drop {
+    to { transform: scale(1); }
+}
+
+@keyframes pulse-win {
+    0% { box-shadow: 0 0 5px 2px #81c784; }
+    50% { box-shadow: 0 0 20px 8px #81c784; }
+    100% { box-shadow: 0 0 5px 2px #81c784; }
+}
+
+@keyframes pulse {
+    0% { outline-color: #ff5252; }
+    50% { outline-color: #ff8a80; }
+    100% { outline-color: #ff5252; }
 }
