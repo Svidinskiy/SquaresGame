@@ -24,7 +24,7 @@ public class CommandProcessor {
             cmd = "GAME";
             String args = trimmed.substring(4).trim();
             if (!args.matches("\\d+\\s*,\\s*\\w+\\s+\\w\\s*,\\s*\\w+\\s+\\w")) {
-                System.out.println("Incorrect command format. Expected: GAME N, TYPE1 C1, TYPE2 C2");
+                System.out.println("Invalid GAME command format");
                 return;
             }
             parts = args.split("\\s*,\\s*");
@@ -39,8 +39,16 @@ public class CommandProcessor {
                     int size = Integer.parseInt(parts[0].trim());
                     String[] p1Params = parts[1].trim().split("\\s+");
                     String[] p2Params = parts[2].trim().split("\\s+");
-                    Player p1 = new Player(p1Params[0], p1Params[1].charAt(0));
-                    Player p2 = new Player(p2Params[0], p2Params[1].charAt(0));
+
+                    String p1Type = p1Params[0];
+                    char p1Color = p1Params[1].charAt(0);
+
+                    String p2Type = p2Params[0];
+                    char p2Color = p2Params[1].charAt(0);
+
+                    Player p1 = new Player(p1Type, p1Color);
+                    Player p2 = new Player(p2Type, p2Color);
+
                     game.startNewGame(size, p1, p2);
                 } catch (Exception e) {
                     System.out.println("Invalid parameters: " + e.getMessage());
@@ -55,7 +63,7 @@ public class CommandProcessor {
                 args = args.replace(",", " ");
                 String[] moveParts = args.split("\\s+");
                 if (moveParts.length != 2) {
-                    System.out.println("Incorrect command");
+                    System.out.println("Invalid move format");
                     return;
                 }
                 try {
@@ -77,6 +85,10 @@ public class CommandProcessor {
                     MOVE X, Y - make a move
                     EXIT - exit program
                     HELP - show this help message
+                    
+                    Examples:
+                    GAME 5, user W, comp B
+                    GAME 4, comp W, user B
                     """;
                 System.out.print(helpText.stripTrailing());
                 break;

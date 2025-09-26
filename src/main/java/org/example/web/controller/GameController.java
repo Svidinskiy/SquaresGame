@@ -1,5 +1,6 @@
 package org.example.web.controller;
 
+import org.example.core.Player;
 import org.example.core.SquaresGame;
 import org.example.web.dto.BoardDto;
 import org.example.web.dto.SimpleMoveDto;
@@ -32,6 +33,7 @@ public class GameController {
 
             SquaresGame game = new SquaresGame();
             char nextPlayer = Character.toUpperCase(nextColorStr.charAt(0));
+
             game.loadBoard(boardDto.getSize(), data, nextPlayer);
 
             String status = game.getGameStatus();

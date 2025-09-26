@@ -1,214 +1,471 @@
-let size, board, nextPlayer, lastMove, winningCells, gameMode, gameActive;
+class SquaresGameUI {
+    constructor() {
+        this.boardSize = 3;
+        this.gameMode = 'pvp';
+        this.currentPlayer = 'white';
+        this.gameActive = false;
+        this.gameStarted = false;
+        this.boardState = [];
+        this.movesHistory = [];
+        this.computerPlaying = false;
+        this.computerTimeout = null;
+        this.winningSquares = null;
+        this.lastMovePlayer = null;
 
-const table = document.getElementById('board');
-const messageElem = document.getElementById('message');
-const currentPlayerElem = document.getElementById('current-player');
-const startButton = document.getElementById('start-game');
-const restartButton = document.getElementById('restart');
-const boardSizeInput = document.getElementById('board-size');
-
-startButton.onclick = startGame;
-restartButton.onclick = startGame;
-
-function startGame() {
-    size = parseInt(boardSizeInput.value);
-    if (size < 3 || size > 10 || isNaN(size)) {
-        messageElem.textContent = 'Пожалуйста, выберите размер доски от 3 до 10';
-        return;
+        this.initializeElements();
+        this.bindEvents();
+        this.createBoard();
+        this.updateUI();
     }
-    gameMode = document.getElementById('game-mode').value;
-    board = Array(size * size).fill('.');
-    nextPlayer = 'b';
-    lastMove = null;
-    winningCells = [];
-    gameActive = true;
-    messageElem.textContent = '';
-    updateCurrentPlayerIndicator();
-    renderBoard();
-}
 
-function updateCurrentPlayerIndicator() {
-    currentPlayerElem.innerHTML = `<div class="piece ${nextPlayer}"></div>`;
-}
+    initializeElements() {
+        this.boardElement = document.getElementById('gameBoard');
+        this.gameStatusElement = document.getElementById('gameStatus');
+        this.sizeSlider = document.getElementById('boardSize');
+        this.sizeValue = document.getElementById('sizeValue');
+        this.startGameBtn = document.getElementById('startGameBtn');
+        this.resetBtn = document.getElementById('resetBtn');
+        this.gameModeRadios = document.querySelectorAll('input[name="gameMode"]');
+        this.whitePlayerType = document.getElementById('whitePlayerType');
+        this.blackPlayerType = document.getElementById('blackPlayerType');
+        this.movesList = document.getElementById('movesList');
+        this.gameResult = document.getElementById('gameResult');
+        this.resultTitle = document.getElementById('resultTitle');
+        this.winningInfo = document.getElementById('winningInfo');
+        this.newRoundBtn = document.getElementById('newRoundBtn');
+        this.modal = document.getElementById('resultModal');
+        this.closeModal = document.getElementById('closeModal');
+    }
 
-function renderBoard() {
-    table.innerHTML = '';
-    for (let i = 0; i < size; i++) {
-        const row = document.createElement('tr');
-        for (let j = 0; j < size; j++) {
-            const cell = document.createElement('td');
-            const val = board[i * size + j];
+    bindEvents() {
+        this.sizeSlider.addEventListener('input', (e) => {
+            this.boardSize = parseInt(e.target.value);
+            this.sizeValue.textContent = `${this.boardSize}x${this.boardSize}`;
+            this.createBoard();
+            this.gameStarted = false;
+            this.updateUI();
+        });
 
-            cell.innerHTML = '';
+        this.gameModeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.gameMode = e.target.value;
+                this.updatePlayerTypes();
+                this.gameStarted = false;
+                this.updateUI();
+            });
+        });
 
-            if (val !== '.') {
-                const circle = document.createElement('div');
-                circle.classList.add('piece');
-                circle.classList.add(val.toLowerCase());
+        this.startGameBtn.addEventListener('click', () => this.startGame());
+        this.resetBtn.addEventListener('click', () => this.resetGame());
+        this.newRoundBtn.addEventListener('click', () => this.startNewRound());
+        this.closeModal.addEventListener('click', () => this.closeResultModal());
+    }
 
-                // подсветка выигрышных клеток
-                if (winningCells.some(c => c[0] === i && c[1] === j)) {
-                    circle.classList.add('winning');
-                }
+    updateUI() {
+        this.startGameBtn.disabled = this.gameStarted;
+        this.startGameBtn.textContent = this.gameStarted ? 'Игра начата' : 'Начать игру';
 
-                // подсветка последнего хода
-                if (lastMove && lastMove[0] === i && lastMove[1] === j) {
-                    circle.classList.add('last-move');
-                }
-
-                cell.appendChild(circle);
-            }
-
-            // кликабельность
-            cell.classList.add(gameActive && val === '.' ? 'clickable' : 'disabled');
-            cell.onclick = () => playerMove(i, j);
-
-            row.appendChild(cell);
+        if (!this.gameStarted) {
+            this.gameStatusElement.textContent = 'Настройте игру и нажмите "Начать игру"';
+        } else if (!this.gameActive) {
+            this.gameStatusElement.textContent = 'Игра завершена';
         }
-        table.appendChild(row);
-    }
-}
-
-function playerMove(x, y) {
-    if (!gameActive) {
-        messageElem.textContent = 'Игра окончена. Нажмите "Перезапустить игру"';
-        return;
-    }
-    if (board[x * size + y] !== '.') {
-        messageElem.textContent = 'Эта клетка уже занята!';
-        return;
     }
 
-    board[x * size + y] = nextPlayer.toUpperCase();
-    lastMove = [x, y];
-    renderBoard();
-
-    if (checkWinner(nextPlayer.toUpperCase())) {
-        messageElem.textContent = `${nextPlayer.toUpperCase()} побеждает!`;
-        gameActive = false;
-        return;
+    startGame() {
+        this.gameStarted = true;
+        this.startNewRound();
+        this.updateUI();
     }
 
-    if (isBoardFull()) {
-        messageElem.textContent = 'Ничья!';
-        gameActive = false;
-        return;
+    createBoard() {
+        this.boardElement.innerHTML = '';
+        this.boardElement.style.gridTemplateColumns = `repeat(${this.boardSize}, 1fr)`;
+        this.boardElement.style.gridTemplateRows = `repeat(${this.boardSize}, 1fr)`;
+
+        const maxBoardSize = 400;
+        const cellSize = Math.min(maxBoardSize / this.boardSize, 80);
+        const boardSizePx = cellSize * this.boardSize;
+
+        this.boardElement.style.width = `${boardSizePx}px`;
+        this.boardElement.style.height = `${boardSizePx}px`;
+
+        this.boardState = Array(this.boardSize).fill().map(() =>
+            Array(this.boardSize).fill(null)
+        );
+
+        for (let y = 0; y < this.boardSize; y++) {
+            for (let x = 0; x < this.boardSize; x++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.x = x;
+                cell.dataset.y = y;
+                cell.addEventListener('click', () => this.handleCellClick(x, y));
+                this.boardElement.appendChild(cell);
+            }
+        }
     }
 
-    if (gameMode === '2p') {
-        togglePlayer();
-    } else if (gameMode === 'vs-computer') {
-        const humanColor = nextPlayer;
-        setTimeout(() => sendMove(humanColor), 300);
+    startNewRound() {
+        if (!this.gameStarted) {
+            this.startGame();
+            return;
+        }
+
+        this.stopComputerPlay();
+        this.gameActive = true;
+        this.movesHistory = [];
+        this.winningSquares = null;
+        this.lastMovePlayer = null;
+        this.hideGameResult();
+        this.updateMovesList();
+
+        this.currentPlayer = 'white';
+        this.createBoard();
+        this.updateGameStatus();
+        this.updatePlayerTypes();
+        this.clearWinningHighlight();
+
+        if (this.gameMode === 'cvc') {
+            this.startComputerGame();
+        }
     }
-}
 
-function togglePlayer() {
-    nextPlayer = nextPlayer === 'b' ? 'w' : 'b';
-    updateCurrentPlayerIndicator();
-}
+    resetGame() {
+        this.stopComputerPlay();
+        this.gameActive = false;
+        this.gameStarted = false;
+        this.movesHistory = [];
+        this.winningSquares = null;
+        this.lastMovePlayer = null;
+        this.createBoard();
+        this.updateGameStatus();
+        this.updateMovesList();
+        this.hideGameResult();
+        this.clearWinningHighlight();
+        this.updateUI();
+    }
 
-function checkWinner(color) {
-    const cells = [];
-    for (let i = 0; i < size; i++)
-        for (let j = 0; j < size; j++)
-            if (board[i * size + j] === color) cells.push([i, j]);
+    handleCellClick(x, y) {
+        if (!this.gameActive || !this.gameStarted || this.boardState[y][x] !== null) return;
+        const currentPlayerType = this.getCurrentPlayerType();
+        if (currentPlayerType === 'Компьютер') return;
+        this.makeMove(x, y);
+    }
 
-    for (let i = 0; i < cells.length; i++) {
-        for (let j = i + 1; j < cells.length; j++) {
-            const [x1, y1] = cells[i];
-            const [x2, y2] = cells[j];
-            const dx = x2 - x1, dy = y2 - y1;
-            const variants = [[-dy, dx], [dy, -dx]];
-            for (const [vx, vy] of variants) {
-                const x3 = x1 + vx, y3 = y1 + vy;
-                const x4 = x2 + vx, y4 = y2 + vy;
-                if (x3 >= 0 && x3 < size && y3 >= 0 && y3 < size &&
-                    x4 >= 0 && x4 < size && y4 >= 0 && y4 < size) {
-                    if (board[x3 * size + y3] === color && board[x4 * size + y4] === color) {
-                        winningCells = [[x1, y1], [x2, y2], [x3, y3], [x4, y4]];
-                        return true;
+    async makeMove(x, y) {
+        if (!this.gameActive) return;
+        if (this.boardState[y][x] !== null) return;
+
+        this.lastMovePlayer = this.currentPlayer;
+        this.boardState[y][x] = this.currentPlayer;
+
+        this.movesHistory.push({
+            player: this.currentPlayer,
+            position: { x, y },
+            moveNumber: this.movesHistory.length + 1
+        });
+
+        this.updateBoard();
+        this.updateMovesList();
+
+        const gameStatus = await this.checkGameStatus(this.lastMovePlayer);
+
+        if (gameStatus === 'win') {
+            this.handleWin();
+            return;
+        } else if (gameStatus === 'draw') {
+            this.handleDraw();
+            return;
+        }
+
+        this.switchPlayer();
+        this.updateGameStatus();
+
+        if (this.shouldComputerMove()) {
+            await this.makeComputerMove();
+        }
+    }
+
+    switchPlayer() {
+        this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
+    }
+
+    shouldComputerMove() {
+        if (!this.gameActive) return false;
+        const currentPlayerType = this.getCurrentPlayerType();
+        return (this.gameMode === 'pvc' || this.gameMode === 'cvc') && currentPlayerType === 'Компьютер';
+    }
+
+    async checkGameStatus(playerToCheck) {
+        const boardData = this.getBoardData();
+        const playerColor = playerToCheck === 'white' ? 'w' : 'b';
+
+        try {
+            const response = await fetch('/api/nextMove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    size: this.boardSize,
+                    data: boardData,
+                    nextPlayerColor: playerColor
+                })
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const result = await response.json();
+
+            if (result.message) {
+                if (result.message.includes('wins')) {
+                    this.winningSquares = result.winningSquare || null;
+                    return 'win';
+                } else if (result.message.includes('Draw')) {
+                    return 'draw';
+                } else if (result.message.includes('finished')) {
+                    return 'win';
+                }
+            }
+            return 'active';
+        } catch (error) {
+            return this.isBoardFull() ? 'draw' : 'active';
+        }
+    }
+
+    async makeComputerMove() {
+        if (!this.gameActive) return;
+
+        const boardData = this.getBoardData();
+        const nextPlayerColor = this.currentPlayer === 'white' ? 'w' : 'b';
+
+        try {
+            const response = await fetch('/api/nextMove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    size: this.boardSize,
+                    data: boardData,
+                    nextPlayerColor: nextPlayerColor
+                })
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const result = await response.json();
+
+            if (result.x >= 0 && result.y >= 0) {
+                if (this.boardState[result.y][result.x] !== null) {
+                    this.makeRandomMove();
+                    return;
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await this.makeMove(result.x, result.y);
+            } else {
+                if (result.message) {
+                    if (result.message.includes('wins')) {
+                        this.winningSquares = result.winningSquare || null;
+                        this.handleWin();
+                    } else if (result.message.includes('Draw')) {
+                        this.handleDraw();
                     }
                 }
             }
+        } catch (error) {
+            console.error('Ошибка при запросе к бэкенду:', error);
+            this.makeRandomMove();
         }
     }
-    return false;
-}
 
-function isBoardFull() {
-    return !board.includes('.');
-}
-
-function checkStatus() {
-    if (!gameActive) return;
-
-    if (checkWinner(nextPlayer.toUpperCase())) {
-        messageElem.textContent = `${nextPlayer.toUpperCase()} побеждает!`;
-        gameActive = false;
-        renderBoard();
-        return;
-    }
-
-    if (isBoardFull()) {
-        messageElem.textContent = 'Ничья!';
-        gameActive = false;
-        renderBoard();
-        return;
-    }
-
-    if (gameMode === '2p') {
-        togglePlayer();
-    } else if (gameMode === 'vs-computer') {
-        const playerBeforeComputer = nextPlayer;
-        setTimeout(() => sendMove(playerBeforeComputer), 300);
-    }
-}
-
-function sendMove(humanColor) {
-    if (!gameActive) return;
-
-    document.getElementById('loading').style.display = 'block';
-    const computerColor = humanColor === 'b' ? 'w' : 'b';
-
-    fetch('/api/nextMove', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ size, data: board.join(''), nextPlayerColor: computerColor })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.x >= 0 && data.y >= 0) {
-            board[data.x * size + data.y] = data.color.toUpperCase();
-            lastMove = [data.x, data.y];
-
-            renderBoard();
-
-            if (checkWinner(data.color.toUpperCase())) {
-                messageElem.textContent = `${data.color.toUpperCase()} побеждает!`;
-                gameActive = false;
-            } else if (isBoardFull()) {
-                messageElem.textContent = 'Ничья!';
-                gameActive = false;
-            } else {
-                nextPlayer = 'b';
-                updateCurrentPlayerIndicator();
+    makeRandomMove() {
+        const emptyCells = [];
+        for (let y = 0; y < this.boardSize; y++) {
+            for (let x = 0; x < this.boardSize; x++) {
+                if (this.boardState[y][x] === null) emptyCells.push({ x, y });
             }
-        } else {
-            messageElem.textContent = data.message || 'Ошибка хода компьютера';
-            gameActive = false;
         }
-    })
-    .catch(err => {
-        console.error('Ошибка при ходе компьютера:', err);
-        messageElem.textContent = 'Ошибка сервера. Попробуйте снова.';
-        gameActive = false;
-    })
-    .finally(() => {
-        document.getElementById('loading').style.display = 'none';
-    });
+
+        if (emptyCells.length > 0) {
+            const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            this.makeMove(randomCell.x, randomCell.y);
+        } else {
+            this.handleDraw();
+        }
+    }
+
+    getBoardData() {
+        let data = '';
+        for (let y = 0; y < this.boardSize; y++) {
+            for (let x = 0; x < this.boardSize; x++) {
+                const cell = this.boardState[y][x];
+                data += cell === 'white' ? 'W' : cell === 'black' ? 'B' : '.';
+            }
+        }
+        return data;
+    }
+
+    isBoardFull() {
+        return this.boardState.every(row => row.every(cell => cell !== null));
+    }
+
+    handleWin() {
+        if (!this.gameActive) return;
+        this.gameActive = false;
+        this.stopComputerPlay();
+        this.disableBoard();
+
+        const winner = this.lastMovePlayer === 'white' ? 'Белые' : 'Чёрные';
+        this.showGameResult(`Победа ${winner}!`, this.winningSquares);
+        this.highlightWinningSquares();
+    }
+
+    handleDraw() {
+        if (!this.gameActive) return;
+        this.gameActive = false;
+        this.stopComputerPlay();
+        this.disableBoard();
+        this.showResultModal();
+    }
+
+    showGameResult(title, winningSquares = null) {
+        this.resultTitle.textContent = title;
+        if (winningSquares) {
+            this.winningInfo.innerHTML = `
+                <div class="winning-info">
+                    <strong>Выигрышный квадрат:</strong><br>
+                    ${winningSquares.map(coord => `(${coord[0]}, ${coord[1]})`).join(' → ')}
+                </div>
+            `;
+        } else {
+            this.winningInfo.innerHTML = '';
+        }
+        this.gameResult.style.display = 'block';
+    }
+
+    hideGameResult() {
+        this.gameResult.style.display = 'none';
+    }
+
+    showResultModal() {
+        this.modal.style.display = 'flex';
+    }
+
+    closeResultModal() {
+        this.modal.style.display = 'none';
+        this.startNewRound();
+    }
+
+    disableBoard() {
+        document.querySelectorAll('.cell').forEach(cell => cell.classList.add('disabled'));
+    }
+
+    highlightWinningSquares() {
+        if (!this.winningSquares) return;
+        this.winningSquares.forEach(coord => {
+            const [x, y] = coord;
+            const cell = this.boardElement.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+            if (cell) cell.classList.add('winning');
+        });
+    }
+
+    clearWinningHighlight() {
+        document.querySelectorAll('.cell.winning').forEach(cell => cell.classList.remove('winning'));
+    }
+
+    updateBoard() {
+        document.querySelectorAll('.cell').forEach(cell => {
+            const x = parseInt(cell.dataset.x);
+            const y = parseInt(cell.dataset.y);
+            const value = this.boardState[y][x];
+            const wasWinning = cell.classList.contains('winning');
+
+            cell.className = 'cell';
+            if (value) cell.classList.add(value);
+
+            if (wasWinning && this.winningSquares) {
+                const isStillWinning = this.winningSquares.some(coord => coord[0] === x && coord[1] === y);
+                if (isStillWinning) cell.classList.add('winning');
+            }
+        });
+
+        if (this.winningSquares) this.highlightWinningSquares();
+    }
+
+    updateGameStatus() {
+        if (!this.gameStarted) {
+            this.gameStatusElement.textContent = 'Настройте игру и нажмите "Начать игру"';
+            return;
+        }
+
+        if (!this.gameActive) {
+            this.gameStatusElement.textContent = 'Игра завершена';
+            return;
+        }
+
+        const playerName = this.currentPlayer === 'white' ? 'Белые' : 'Чёрные';
+        const playerType = this.getCurrentPlayerType();
+        this.gameStatusElement.textContent = `Ходят ${playerName} (${playerType})`;
+
+        document.querySelectorAll('.player-info').forEach(info => info.classList.remove('active'));
+        const activePlayerInfo = this.currentPlayer === 'white' ?
+            document.querySelector('.player-info.white') : document.querySelector('.player-info.black');
+        if (activePlayerInfo) activePlayerInfo.classList.add('active');
+    }
+
+    updatePlayerTypes() {
+        switch (this.gameMode) {
+            case 'pvp':
+                this.whitePlayerType.textContent = 'Игрок';
+                this.blackPlayerType.textContent = 'Игрок';
+                break;
+            case 'pvc':
+                this.whitePlayerType.textContent = this.currentPlayer === 'white' ? 'Игрок' : 'Компьютер';
+                this.blackPlayerType.textContent = this.currentPlayer === 'black' ? 'Игрок' : 'Компьютер';
+                break;
+            case 'cvc':
+                this.whitePlayerType.textContent = 'Компьютер';
+                this.blackPlayerType.textContent = 'Компьютер';
+                break;
+        }
+    }
+
+    getCurrentPlayerType() {
+        if (this.gameMode === 'pvp') return 'Игрок';
+        if (this.gameMode === 'pvc') {
+            return this.currentPlayer === 'white' ? 'Игрок' : 'Компьютер';
+        }
+        return 'Компьютер';
+    }
+
+    updateMovesList() {
+        this.movesList.innerHTML = '';
+        this.movesHistory.forEach(move => {
+            const moveElement = document.createElement('div');
+            moveElement.className = 'move-item';
+            moveElement.textContent = `Ход ${move.moveNumber}: ${move.player === 'white' ? 'Белые' : 'Чёрные'} (${move.position.x}, ${move.position.y})`;
+            this.movesList.appendChild(moveElement);
+        });
+        this.movesList.scrollTop = this.movesList.scrollHeight;
+    }
+
+    stopComputerPlay() {
+        this.computerPlaying = false;
+        if (this.computerTimeout) {
+            clearTimeout(this.computerTimeout);
+            this.computerTimeout = null;
+        }
+    }
+
+    startComputerGame() {
+        if (this.gameMode === 'cvc' && this.gameStarted) {
+            this.computerPlaying = true;
+            this.makeComputerMove();
+        }
+    }
 }
 
-function updateCurrentPlayerIndicator() {
-    currentPlayerElem.innerHTML = `<div class="piece ${nextPlayer}"></div>`;
-}
+document.addEventListener('DOMContentLoaded', () => {
+    new SquaresGameUI();
+});
