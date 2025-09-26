@@ -1,6 +1,5 @@
 package org.example.core;
 
-// Класс игрока
 public class Player {
     private final String type;
     private final char color;
@@ -17,7 +16,6 @@ public class Player {
             throw new IllegalArgumentException("Invalid color: must be 'W' or 'B'");
         }
         this.color = upperColor;
-
     }
 
     public String getType() {

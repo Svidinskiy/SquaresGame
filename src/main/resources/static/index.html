@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Квадраты</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <header class="header">
+        <h1>Квадраты</h1>
+        <div class="game-status" id="gameStatus">Ожидание начала игры</div>
+    </header>
+
+    <main class="main-content">
+        <aside class="sidebar left-sidebar">
+            <div class="panel">
+                <h3>Настройки игры</h3>
+
+                <div class="setting-group">
+                    <label for="boardSize">Размер поля:</label>
+                    <input type="range" id="boardSize" min="3" max="10" value="3" class="slider">
+                    <span id="sizeValue">3x3</span>
+                </div>
+
+                <div class="setting-group">
+                    <label>Режим игры:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="gameMode" value="pvp" checked> Игрок vs Игрок</label>
+                        <label><input type="radio" name="gameMode" value="pvc"> Игрок vs Компьютер</label>
+                        <label><input type="radio" name="gameMode" value="cvc"> Компьютер vs Компьютер</label>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="startGameBtn" class="btn primary">Начать игру</button>
+                    <button id="resetBtn" class="btn secondary">Сброс</button>
+                </div>
+            </div>
+        </aside>
+
+        <section class="game-area">
+            <div class="board-container">
+                <div id="gameBoard" class="board"></div>
+            </div>
+
+            <div id="gameResult" class="game-result" style="display: none;">
+                <h2 id="resultTitle"></h2>
+                <div id="winningInfo"></div>
+                <button id="newRoundBtn" class="btn primary">Новый раунд</button>
+            </div>
+        </section>
+
+        <aside class="sidebar right-sidebar">
+            <div class="panel">
+                <h3>Ходы игры</h3>
+                <div class="players-info">
+                    <div class="player-info white active">
+                        <span class="player-color">⚪</span>
+                        <span class="player-name">Белые</span>
+                        <span class="player-type" id="whitePlayerType">Игрок</span>
+                    </div>
+                    <div class="player-info black">
+                        <span class="player-color">⚫</span>
+                        <span class="player-name">Чёрные</span>
+                        <span class="player-type" id="blackPlayerType">Игрок</span>
+                    </div>
+                </div>
+
+                <div class="moves-history">
+                    <h4>История ходов</h4>
+                    <div id="movesList" class="moves-list"></div>
+                </div>
+            </div>
+        </aside>
+    </main>
+</div>
+
+<div id="resultModal" class="modal">
+    <div class="modal-content">
+        <h2>Ничья!</h2>
+        <p id="resultMessage">Все клетки заполнены, но квадрат не построен.</p>
+        <button id="closeModal" class="btn primary">Новая игра</button>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

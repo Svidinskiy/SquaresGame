@@ -3,14 +3,23 @@ package org.example.web.dto;
 public class SimpleMoveDto {
     private int x;
     private int y;
-    private String color;   // Цвет хода (b или w)
-    private String message; // Статус игры или ошибки
+    private String color;
+    private String message;
+    private int[][] winningSquare;
 
     public SimpleMoveDto(int x, int y, String color, String message) {
         this.x = x;
         this.y = y;
         this.color = color;
         this.message = message;
+    }
+
+    public SimpleMoveDto(int x, int y, String color, String message, int[][] winningSquare) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.message = message;
+        this.winningSquare = winningSquare;
     }
 
     public int getX() { return x; }
@@ -24,4 +33,7 @@ public class SimpleMoveDto {
 
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
+
+    public int[][] getWinningSquare() { return winningSquare; }
+    public void setWinningSquare(int[][] winningSquare) { this.winningSquare = winningSquare; }
 }
